@@ -22,7 +22,7 @@ struct ImageDisplay {
   let name: String
 }
 
-class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
+class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIActionSheetDelegate {
   
   var textRecognizer: VisionTextRecognizer!
   var cloudTextRecognizer: VisionTextRecognizer!
@@ -53,9 +53,9 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
   @IBAction func findTextDidTouch(_ sender: UIButton) {
     runTextRecognition(with: imageView.image!)
   }
-  
-  @IBAction func findTextCloudDidTouch(_ sender: UIButton) {
-    runCloudTextRecognition(with: imageView.image!)
+
+  @IBAction func addPhotoDidTouch(_ sender: Any) {
+    selectImage()
   }
   
   // MARK: Text Recognition
@@ -66,15 +66,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
       self.processResult(from: features, error: error)
     })
   }
-  
-  func runCloudTextRecognition(with image: UIImage) {
-    let visionImage = VisionImage(image: image)
-    cloudTextRecognizer.process(visionImage, completion: { (features, error) in
-      self.processResult(from: features, error: error)
-    })
-  }
 
-  
   // MARK: Image Drawing
   
   func processResult(from text: VisionText?, error: Error?) {
@@ -220,6 +212,53 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     imageView.image = UIImage(named: imageDisplay.file)
   }
   
+  // MARK: UIImagePickerControllerDelegate
+  
+  func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+    removeFrames()
+    self.dismiss(animated: true, completion: { () -> Void in
+  
+    })
+    print(info.keys)
+    if let pickedImage = info[UIImagePickerControllerOriginalImage] as? UIImage {
+      imageView.contentMode = .scaleAspectFit
+      imageView.image = pickedImage
+    }
+  }
+  
+  func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+    removeFrames()
+    self.dismiss(animated: true, completion: nil)
+  }
+  
+  func selectImage() {
+    let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+    let cameraActrion = UIAlertAction(title: "Take Photo", style: .default) { (action) in
+      if UIImagePickerController.isSourceTypeAvailable(.camera){
+        let imagePicker = UIImagePickerController()
+        imagePicker.delegate = self;
+        imagePicker.sourceType = .camera
+        self.present(imagePicker, animated: true, completion: nil)
+      }
+    }
+    let albumAction = UIAlertAction(title: "View Photo Album", style: .default) { (action) in
+      let imagePicker = UIImagePickerController()
+      if
+        UIImagePickerController.isSourceTypeAvailable(.savedPhotosAlbum){
+        
+        imagePicker.delegate = self
+        imagePicker.sourceType = .savedPhotosAlbum;
+        imagePicker.allowsEditing = false
+        
+        self.present(imagePicker, animated: true, completion: nil)
+      }
+    }
+    
+    actionSheet.addAction(albumAction)
+    actionSheet.addAction(cameraActrion)
+    present(actionSheet, animated: true, completion: nil)
+  }
+
 }
 
 // MARK: - Fileprivate
